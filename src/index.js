@@ -44,7 +44,7 @@ const cardsResponse = fetch("https://nomoreparties.co/v1/wff-cohort-23/cards", {
     authorization: "7bf212db-a84d-4fa1-abc8-ff61751045bf",
   },
 }).then((res) => {
-  if (!res.ok) Promise.reject(new Error("Ошибка загрузки карточек"));
+  if (!res.ok) return Promise.reject(new Error("Ошибка загрузки карточек"));
   return res.json();
 });
 
@@ -56,7 +56,8 @@ const userResponse = fetch(
     },
   }
 ).then((res) => {
-  if (!res.ok) Promise.reject(new Error("Ошибка загрузки данных пользователя"));
+  if (!res.ok)
+    return Promise.reject(new Error("Ошибка загрузки данных пользователя"));
   return res.json();
 });
 
@@ -72,6 +73,8 @@ Promise.all([cardsResponse, userResponse])
         toggleLikeButton,
         openImagePopup
       );
+      cardElement.setAttribute('id', `${cardData._id}`)
+      checkCardOwner(cardData, userResponse, cardElement);
       placesList.append(cardElement);
       initialLikes(cardElement, cardData);
     });
@@ -79,6 +82,14 @@ Promise.all([cardsResponse, userResponse])
   .catch((error) => {
     console.error(error);
   });
+
+// Функция управления видимостью кнопки удаления карточки в зависимости от владельца карточки
+function checkCardOwner(cardData, userResponse, cardElement) {
+  if (cardData.owner._id !== userResponse._id) {
+    const buttonDelete = cardElement.querySelector(".card__delete-button");
+    buttonDelete.remove();
+  }
+}
 
 // Функция инициализации счетчиков лайков
 function initialLikes(cardElement, cardData) {
@@ -131,6 +142,7 @@ function handleNewPlaceSubmit(evt) {
         toggleLikeButton,
         openImagePopup
       );
+      cardElement.setAttribute('id', `${result._id}`)
       placesList.prepend(cardElement);
     })
     .catch((error) => {
@@ -178,46 +190,6 @@ enableValidation({
   inputErrorClass: "popup__input_type_error",
   errorClass: "popup__error_visible",
 });
-
-// fetch("https://nomoreparties.co/v1/wff-cohort-23/users/me", {
-//   headers: {
-//     authorization: "7bf212db-a84d-4fa1-abc8-ff61751045bf",
-//   },
-// })
-// .then(res => res.json())
-//   .then((result) => {
-//     console.log(result);
-//   });
-
-// fetch("https://nomoreparties.co/v1/wff-cohort-23/cards", {
-//   headers: {
-//     authorization: "7bf212db-a84d-4fa1-abc8-ff61751045bf",
-//   },
-// })
-//   .then((res) => res.json())
-//   .then((initialCards) => {
-//     initialCards.forEach((cardData) => {
-//       const cardElement = createCard(
-//         cardData,
-//         deleteCard,
-//         toggleLikeButton,
-//         openImagePopup
-//       );
-//       placesList.append(cardElement);
-//     });
-//   });
-
-// fetch('https://nomoreparties.co/v1/wff-cohort-23/users/me', {
-//   method: 'PATCH',
-//   headers: {
-//     authorization: '7bf212db-a84d-4fa1-abc8-ff61751045bf',
-//     'Content-Type': 'application/json'
-//   },
-//   body: JSON.stringify({
-//     name: 'Marie Skłodowska Curie',
-//     about: 'Physicist and Chemist'
-//   })
-// });
 
 // Функция добавления новой карточки на сервер
 

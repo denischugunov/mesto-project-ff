@@ -19,7 +19,26 @@ const createCard = (cardData, deleteCard, toggleLikeButton, openImagePopup) => {
 
 // Функция удаления карточки
 function deleteCard(evt) {
-  evt.target.closest(".places__item").remove();
+  const currentCard = evt.target.closest(".places__item");
+  removeCardFromServer(currentCard.id)
+    .then(() => currentCard.remove())
+    .catch((err) => console.error("Ошибка при удалении карточки:", err));
+}
+
+// !!!!! Функция удаления карточки с сервера
+function removeCardFromServer(cardId) {
+  return fetch(`https://nomoreparties.co/v1/wff-cohort-23/cards/${cardId}`, {
+    method: "DELETE",
+    headers: {
+      authorization: "7bf212db-a84d-4fa1-abc8-ff61751045bf",
+      "Content-Type": "application/json",
+    },
+  }).then((res) => {
+    if (!res.ok)
+      return Promise.reject(
+        new Error(`Не удалось удалить карточку: ${res.statusText}`)
+      );
+  });
 }
 
 // Функция лайка
