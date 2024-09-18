@@ -1,4 +1,3 @@
-import { initialCards } from "./components/cards.js";
 import { createCard, deleteCard, toggleLikeButton } from "./components/card.js";
 import { handleOpenPopup } from "./components/modal.js";
 import { enableValidation, clearValidation } from "./components/validation.js";
@@ -39,16 +38,52 @@ popupEdit.classList.add("popup_is-animated");
 popupAdd.classList.add("popup_is-animated");
 popupCard.classList.add("popup_is-animated");
 
-// Функция инициализации карточек
-initialCards.forEach((cardData) => {
-  const cardElement = createCard(
-    cardData,
-    deleteCard,
-    toggleLikeButton,
-    openImagePopup
-  );
-  placesList.append(cardElement);
+// Функции инициализации карточек и данных пользователя с запросом с сервера (асинхр)
+const cardsResponse = fetch("https://nomoreparties.co/v1/wff-cohort-23/cards", {
+  headers: {
+    authorization: "7bf212db-a84d-4fa1-abc8-ff61751045bf",
+  },
+}).then((res) => {
+  if (!res.ok) throw new Error("Ошибка загрузки карточек");
+  return res.json();
 });
+
+const userResponse = fetch(
+  "https://nomoreparties.co/v1/wff-cohort-23/users/me",
+  {
+    headers: {
+      authorization: "7bf212db-a84d-4fa1-abc8-ff61751045bf",
+    },
+  }
+).then((res) => {
+  if (!res.ok) throw new Error("Ошибка загрузки карточек");
+  return res.json();
+});
+
+Promise.all([cardsResponse, userResponse])
+  .then(([cardsResponse, userResponse]) => {
+    initialProfileInfo(userResponse);
+
+    const initialCards = cardsResponse;
+    initialCards.forEach((cardData) => {
+      const cardElement = createCard(
+        cardData,
+        deleteCard,
+        toggleLikeButton,
+        openImagePopup
+      );
+      placesList.append(cardElement);
+    });
+  })
+  .catch((error) => {
+    console.error(error);
+  });
+
+// Функция инициализации данных пользователя
+function initialProfileInfo(userResponse) {
+  profileName.textContent = userResponse.name;
+  profileDescription.textContent = userResponse.about;
+}
 
 // функция изменения данных пользователя
 function handleEditProfileSubmit(evt) {
@@ -56,6 +91,18 @@ function handleEditProfileSubmit(evt) {
 
   profileName.textContent = profileNameInput.value;
   profileDescription.textContent = profileDescriptionInput.value;
+
+  fetch("https://nomoreparties.co/v1/wff-cohort-23/users/me", {
+    method: "PATCH",
+    headers: {
+      authorization: "7bf212db-a84d-4fa1-abc8-ff61751045bf",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      name: `${profileNameInput.value}`,
+      about: `${profileDescriptionInput.value}`,
+    }),
+  });
 }
 
 // Функция добавления новой карточки с местом
@@ -117,3 +164,43 @@ enableValidation({
   inputErrorClass: "popup__input_type_error",
   errorClass: "popup__error_visible",
 });
+
+// fetch("https://nomoreparties.co/v1/wff-cohort-23/users/me", {
+//   headers: {
+//     authorization: "7bf212db-a84d-4fa1-abc8-ff61751045bf",
+//   },
+// })
+// .then(res => res.json())
+//   .then((result) => {
+//     console.log(result);
+//   });
+
+// fetch("https://nomoreparties.co/v1/wff-cohort-23/cards", {
+//   headers: {
+//     authorization: "7bf212db-a84d-4fa1-abc8-ff61751045bf",
+//   },
+// })
+//   .then((res) => res.json())
+//   .then((initialCards) => {
+//     initialCards.forEach((cardData) => {
+//       const cardElement = createCard(
+//         cardData,
+//         deleteCard,
+//         toggleLikeButton,
+//         openImagePopup
+//       );
+//       placesList.append(cardElement);
+//     });
+//   });
+
+// fetch('https://nomoreparties.co/v1/wff-cohort-23/users/me', {
+//   method: 'PATCH',
+//   headers: {
+//     authorization: '7bf212db-a84d-4fa1-abc8-ff61751045bf',
+//     'Content-Type': 'application/json'
+//   },
+//   body: JSON.stringify({
+//     name: 'Marie Skłodowska Curie',
+//     about: 'Physicist and Chemist'
+//   })
+// });
