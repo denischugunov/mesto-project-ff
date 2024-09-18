@@ -44,7 +44,7 @@ const cardsResponse = fetch("https://nomoreparties.co/v1/wff-cohort-23/cards", {
     authorization: "7bf212db-a84d-4fa1-abc8-ff61751045bf",
   },
 }).then((res) => {
-  if (!res.ok) throw new Error("Ошибка загрузки карточек");
+  if (!res.ok) Promise.reject(new Error("Ошибка загрузки карточек"));
   return res.json();
 });
 
@@ -56,7 +56,7 @@ const userResponse = fetch(
     },
   }
 ).then((res) => {
-  if (!res.ok) throw new Error("Ошибка загрузки данных пользователя");
+  if (!res.ok) Promise.reject(new Error("Ошибка загрузки данных пользователя"));
   return res.json();
 });
 
@@ -234,7 +234,7 @@ function addCardToServer(nameCard, linkCard) {
     }),
   }).then((res) => {
     if (!res.ok) {
-      throw new Error(`Error: ${response.statusText}`);
+      return Promise.reject(new Error(`Error: ${response.statusText}`));
     }
     return res.json();
   });
