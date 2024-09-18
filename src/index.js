@@ -56,7 +56,7 @@ const userResponse = fetch(
     },
   }
 ).then((res) => {
-  if (!res.ok) throw new Error("Ошибка загрузки карточек");
+  if (!res.ok) throw new Error("Ошибка загрузки данных пользователя");
   return res.json();
 });
 
@@ -73,7 +73,7 @@ Promise.all([cardsResponse, userResponse])
         openImagePopup
       );
       placesList.append(cardElement);
-      initialLikes(cardElement, cardData)
+      initialLikes(cardElement, cardData);
     });
   })
   .catch((error) => {
@@ -82,7 +82,7 @@ Promise.all([cardsResponse, userResponse])
 
 // Функция инициализации счетчиков лайков
 function initialLikes(cardElement, cardData) {
-  const counterLikes = cardElement.querySelector('.card__like-counter')
+  const counterLikes = cardElement.querySelector(".card__like-counter");
   counterLikes.textContent = cardData.likes.length;
 }
 
@@ -118,20 +118,25 @@ function handleEditProfileSubmit(evt) {
 function handleNewPlaceSubmit(evt) {
   evt.preventDefault();
 
-  const cardData = {
-    name: placeNameInput.value,
-    link: placeLinkInput.value,
-  };
+  addCardToServer(placeNameInput.value, placeLinkInput.value)
+    .then((result) => {
+      const cardData = {
+        name: result.name,
+        link: result.link,
+      };
 
-  const cardElement = createCard(
-    cardData,
-    deleteCard,
-    toggleLikeButton,
-    openImagePopup
-  );
-  placesList.prepend(cardElement);
-
-  newPlaceForm.reset();
+      const cardElement = createCard(
+        cardData,
+        deleteCard,
+        toggleLikeButton,
+        openImagePopup
+      );
+      placesList.prepend(cardElement);
+    })
+    .catch((error) => {
+      console.error("Ошибка при добавлении карточки:", error);
+    })
+    .finally(() => newPlaceForm.reset());
 }
 
 // функция открытия изображения в большом окне
@@ -213,3 +218,24 @@ enableValidation({
 //     about: 'Physicist and Chemist'
 //   })
 // });
+
+// Функция добавления новой карточки на сервер
+
+function addCardToServer(nameCard, linkCard) {
+  return fetch("https://nomoreparties.co/v1/wff-cohort-23/cards", {
+    method: "POST",
+    headers: {
+      authorization: "7bf212db-a84d-4fa1-abc8-ff61751045bf",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      name: `${nameCard}`,
+      link: `${linkCard}`,
+    }),
+  }).then((res) => {
+    if (!res.ok) {
+      throw new Error(`Error: ${response.statusText}`);
+    }
+    return res.json();
+  });
+}
