@@ -108,6 +108,7 @@ document.addEventListener("click", (evt) => {
 popupEdit.addEventListener("submit", handleEditProfileSubmit);
 popupAdd.addEventListener("submit", handleNewPlaceSubmit);
 
+// Инициализация валидации форм
 enableValidation({
   formSelector: ".popup__form",
   inputSelector: ".popup__input",

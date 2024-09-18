@@ -1,3 +1,4 @@
+// Функция отображения сообщения об ошибке для поля ввода
 const showInputError = (
   formElement,
   inputElement,
@@ -11,6 +12,7 @@ const showInputError = (
   errorElement.classList.add(validationConfig.errorClass);
 };
 
+// Функция скрытия сообщения об ошибке для поля ввода
 const hideInputError = (formElement, inputElement, validationConfig) => {
   const errorElement = formElement.querySelector(`.${inputElement.id}-error`);
 
@@ -19,6 +21,7 @@ const hideInputError = (formElement, inputElement, validationConfig) => {
   errorElement.textContent = "";
 };
 
+// Функция проверки валидности поля и отображения/скрытия ошибок
 const isValid = (formElement, inputElement, validationConfig) => {
   if (inputElement.validity.patternMismatch) {
     inputElement.setCustomValidity(inputElement.dataset.errorMessage);
@@ -38,12 +41,14 @@ const isValid = (formElement, inputElement, validationConfig) => {
   }
 };
 
+// Функция проверки наличия недопустимых полей в форме
 const hasInvalidInput = (inputList) => {
   return inputList.some((inputElement) => {
     return !inputElement.validity.valid;
   });
 };
 
+// Функция управления состоянием кнопки отправки формы
 const toggleButtonState = (inputList, buttonElement, validationConfig) => {
   if (hasInvalidInput(inputList)) {
     buttonElement.disabled = true;
@@ -54,6 +59,7 @@ const toggleButtonState = (inputList, buttonElement, validationConfig) => {
   }
 };
 
+// Функция для навешивания слушателей событий на поля ввода
 const setEventListeners = (formElement, validationConfig) => {
   const inputList = Array.from(
     formElement.querySelectorAll(validationConfig.inputSelector)
@@ -70,6 +76,7 @@ const setEventListeners = (formElement, validationConfig) => {
   });
 };
 
+// Функция инициализации валидации форм
 const enableValidation = (validationConfig) => {
   const formList = Array.from(
     document.querySelectorAll(validationConfig.formSelector)
@@ -80,6 +87,7 @@ const enableValidation = (validationConfig) => {
   });
 };
 
+// Функция очистки данных валидации при повторном открытии форм
 const clearValidation = (profileForm, validationConfig) => {
   const localInputs = Array.from(
     profileForm.querySelectorAll(validationConfig.inputSelector)
