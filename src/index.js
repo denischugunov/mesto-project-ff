@@ -73,17 +73,26 @@ Promise.all([cardsResponse, userResponse])
         openImagePopup
       );
       placesList.append(cardElement);
+      initialLikes(cardElement, cardData)
     });
   })
   .catch((error) => {
     console.error(error);
   });
 
+// Функция инициализации счетчиков лайков
+function initialLikes(cardElement, cardData) {
+  const counterLikes = cardElement.querySelector('.card__like-counter')
+  counterLikes.textContent = cardData.likes.length;
+}
+
 // Функция инициализации данных пользователя
 function initialProfileInfo(userResponse) {
   profileName.textContent = userResponse.name;
   profileDescription.textContent = userResponse.about;
 }
+
+// !!!to-do!!! Функции выше работают с АПИ, стоит изучить и перепестить в api.js
 
 // функция изменения данных пользователя
 function handleEditProfileSubmit(evt) {
