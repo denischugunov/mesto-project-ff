@@ -1,6 +1,7 @@
 import { initialCards } from "./components/cards.js";
 import { createCard, deleteCard, toggleLikeButton } from "./components/card.js";
 import { handleOpenPopup } from "./components/modal.js";
+import { enableValidation, clearValidation } from "./components/validation.js";
 import "./pages/index.css";
 
 // глобальные переменные основной страницы
@@ -22,6 +23,16 @@ const profileDescriptionInput = editProfileForm.querySelector(
 const newPlaceForm = document.querySelector('form[name="new-place"]');
 const placeNameInput = newPlaceForm.querySelector('[name="place-name"]');
 const placeLinkInput = newPlaceForm.querySelector('[name="link"]');
+
+// глобальная константа с конфигом для валидации форм
+const validationConfig = {
+  formSelector: ".popup__form",
+  inputSelector: ".popup__input",
+  submitButtonSelector: ".popup__button",
+  inactiveButtonClass: "popup__button_disabled",
+  inputErrorClass: "popup__input_type_error",
+  errorClass: "popup__error_visible",
+};
 
 // Выражения, чтобы самая первая анимация открытия модальных окон по клику была плавной
 popupEdit.classList.add("popup_is-animated");
@@ -85,12 +96,23 @@ document.addEventListener("click", (evt) => {
     profileNameInput.value = profileName.textContent;
     profileDescriptionInput.value = profileDescription.textContent;
     handleOpenPopup(popupEdit);
+    clearValidation(editProfileForm, validationConfig);
   } else if (evt.target === addBtn) {
     newPlaceForm.reset();
     handleOpenPopup(popupAdd);
+    clearValidation(newPlaceForm, validationConfig);
   }
 });
 
 // обработчики событий для сабмитов форм
 popupEdit.addEventListener("submit", handleEditProfileSubmit);
 popupAdd.addEventListener("submit", handleNewPlaceSubmit);
+
+enableValidation({
+  formSelector: ".popup__form",
+  inputSelector: ".popup__input",
+  submitButtonSelector: ".popup__button",
+  inactiveButtonClass: "popup__button_disabled",
+  inputErrorClass: "popup__input_type_error",
+  errorClass: "popup__error_visible",
+});
