@@ -14,7 +14,7 @@ const createCard = (
   imageElement.src = `${cardData.link}`;
   imageElement.alt = `${cardData.name}`;
 
-  cardElement.setAttribute('id', `${cardData._id}`)
+  cardElement.setAttribute("id", `${cardData._id}`);
   cardElement.querySelector(".card__title").textContent = `${cardData.name}`;
 
   imageElement.addEventListener("click", openImagePopup);
@@ -26,7 +26,7 @@ const createCard = (
 
 // !!!Функция удаления карточки
 function deleteCard(currentCard, popupConfirm) {
-  console.log(currentCard.id)
+  console.log(currentCard.id);
 
   removeCardFromServer(currentCard.id)
     .then(() => {
@@ -67,9 +67,49 @@ function removeCardFromServer(cardId) {
   });
 }
 
-// Функция лайка
+// Функция лайка (рендер + вызов функции отправки на сервер)
 function toggleLikeButton(evt) {
-  evt.target.classList.toggle("card__like-button_is-active");
+  const currentLikeButton = evt.target;
+  sendLikeStatus(currentLikeButton);
+  currentLikeButton.classList.toggle("card__like-button_is-active");
+}
+
+// !!!Функция отправки данных о лайке на сервер
+function sendLikeStatus(currentLikeButton) {
+  const currentCard = currentLikeButton.closest(".card");
+  if (currentLikeButton.classList.contains("card__like-button_is-active")) {
+    fetch(
+      `https://nomoreparties.co/v1/wff-cohort-23/cards/likes/${currentCard.id}`,
+      {
+        method: "DELETE",
+        headers: {
+          authorization: "7bf212db-a84d-4fa1-abc8-ff61751045bf",
+          "Content-Type": "application/json",
+        },
+      }
+    )
+      .then((res) => res.json())
+      .then((cardData) => renderLikeCounter(cardData, currentCard));
+  } else {
+    fetch(
+      `https://nomoreparties.co/v1/wff-cohort-23/cards/likes/${currentCard.id}`,
+      {
+        method: "PUT",
+        headers: {
+          authorization: "7bf212db-a84d-4fa1-abc8-ff61751045bf",
+          "Content-Type": "application/json",
+        },
+      }
+    )
+      .then((res) => res.json())
+      .then((cardData) => renderLikeCounter(cardData, currentCard));
+  }
+}
+
+function renderLikeCounter(cardData, currentCard) {
+  const likeCount = cardData.likes.length;
+  const counterLikes = currentCard.querySelector(".card__like-counter");
+  counterLikes.textContent = likeCount;
 }
 
 export { createCard, deleteCard, toggleLikeButton };

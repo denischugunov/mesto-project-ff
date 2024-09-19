@@ -77,6 +77,7 @@ Promise.all([cardsResponse, userResponse])
       checkCardOwner(cardData, userResponse, cardElement);
       placesList.append(cardElement);
       initialLikes(cardElement, cardData);
+      initialLikesButtonState(cardElement, cardData, userResponse);
     });
   })
   .catch((error) => {
@@ -95,6 +96,16 @@ function checkCardOwner(cardData, userResponse, cardElement) {
 function initialLikes(cardElement, cardData) {
   const counterLikes = cardElement.querySelector(".card__like-counter");
   counterLikes.textContent = cardData.likes.length;
+}
+
+// Функция инициализации состояния кнопок лайков
+function initialLikesButtonState(cardElement, cardData, userResponse) {
+  const likeButton = cardElement.querySelector(".card__like-button");
+  const userLiked = cardData.likes.some((users) => users.name === userResponse.name);
+  
+  if (userLiked) {
+    likeButton.classList.add("card__like-button_is-active");
+  }
 }
 
 // Функция инициализации данных пользователя
@@ -134,7 +145,7 @@ function handleNewPlaceSubmit(evt) {
       const cardData = {
         name: result.name,
         link: result.link,
-        _id: result._id
+        _id: result._id,
       };
 
       const cardElement = createCard(
@@ -192,7 +203,7 @@ enableValidation({
   errorClass: "popup__error_visible",
 });
 
-// Функция добавления новой карточки на сервер
+// !!!Функция добавления новой карточки на сервер
 
 function addCardToServer(nameCard, linkCard) {
   return fetch("https://nomoreparties.co/v1/wff-cohort-23/cards", {
@@ -221,7 +232,7 @@ function confirmDelete(evt) {
   );
   const currentCard = evt.target.closest(".places__item");
 
-  handleOpenPopup(popupConfirm)
+  handleOpenPopup(popupConfirm);
   buttonConfirm.addEventListener("click", () => {
     deleteCard(currentCard, popupConfirm);
   });
