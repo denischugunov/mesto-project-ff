@@ -69,11 +69,11 @@ Promise.all([cardsResponse, userResponse])
     initialCards.forEach((cardData) => {
       const cardElement = createCard(
         cardData,
-        deleteCard,
+        confirmDelete,
         toggleLikeButton,
         openImagePopup
       );
-      cardElement.setAttribute('id', `${cardData._id}`)
+
       checkCardOwner(cardData, userResponse, cardElement);
       placesList.append(cardElement);
       initialLikes(cardElement, cardData);
@@ -134,15 +134,16 @@ function handleNewPlaceSubmit(evt) {
       const cardData = {
         name: result.name,
         link: result.link,
+        _id: result._id
       };
 
       const cardElement = createCard(
         cardData,
-        deleteCard,
+        confirmDelete,
         toggleLikeButton,
         openImagePopup
       );
-      cardElement.setAttribute('id', `${result._id}`)
+      // cardElement.setAttribute('id', `${result._id}`)
       placesList.prepend(cardElement);
     })
     .catch((error) => {
@@ -209,5 +210,19 @@ function addCardToServer(nameCard, linkCard) {
       return Promise.reject(new Error(`Error: ${response.statusText}`));
     }
     return res.json();
+  });
+}
+
+// !!!Функция подтверждения удаления карточки
+function confirmDelete(evt) {
+  const popupConfirm = document.querySelector(".popup_type_delete-card");
+  const buttonConfirm = popupConfirm.querySelector(
+    ".popup__button_type-delete"
+  );
+  const currentCard = evt.target.closest(".places__item");
+
+  handleOpenPopup(popupConfirm)
+  buttonConfirm.addEventListener("click", () => {
+    deleteCard(currentCard, popupConfirm);
   });
 }

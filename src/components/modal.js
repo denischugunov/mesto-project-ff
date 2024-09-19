@@ -39,4 +39,5 @@ function closePopup(popupElement) {
   document.removeEventListener("keydown", handleEscKeydown);
 }
 
+
 export { handleOpenPopup };

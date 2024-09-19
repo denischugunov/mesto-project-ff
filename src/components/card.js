@@ -1,5 +1,10 @@
 // Функция создания карточки
-const createCard = (cardData, deleteCard, toggleLikeButton, openImagePopup) => {
+const createCard = (
+  cardData,
+  confirmDelete,
+  toggleLikeButton,
+  openImagePopup
+) => {
   const template = document.querySelector("#card-template").content;
   const cardElement = template.querySelector(".places__item").cloneNode("true");
   const imageElement = cardElement.querySelector(".card__image");
@@ -8,22 +13,43 @@ const createCard = (cardData, deleteCard, toggleLikeButton, openImagePopup) => {
 
   imageElement.src = `${cardData.link}`;
   imageElement.alt = `${cardData.name}`;
+
+  cardElement.setAttribute('id', `${cardData._id}`)
   cardElement.querySelector(".card__title").textContent = `${cardData.name}`;
 
   imageElement.addEventListener("click", openImagePopup);
-  deleteButton.addEventListener("click", deleteCard);
+  deleteButton.addEventListener("click", confirmDelete);
   likeButton.addEventListener("click", toggleLikeButton);
 
   return cardElement;
 };
 
-// Функция удаления карточки
-function deleteCard(evt) {
-  const currentCard = evt.target.closest(".places__item");
+// !!!Функция удаления карточки
+function deleteCard(currentCard, popupConfirm) {
+  console.log(currentCard.id)
+
   removeCardFromServer(currentCard.id)
-    .then(() => currentCard.remove())
+    .then(() => {
+      currentCard.remove();
+      popupConfirm.style.display = "none";
+    })
     .catch((err) => console.error("Ошибка при удалении карточки:", err));
 }
+
+// // !!!Функция подтверждения удаления карточки
+// function confirmDelete(evt) {
+//   const popupConfirm = document.querySelector(".popup_type_delete-card");
+//   const buttonConfirm = popupConfirm.querySelector(
+//     ".popup__button_type-delete"
+//   );
+//   const currentCard = evt.target.closest(".places__item");
+
+//   // popupConfirm.style.display = "flex";
+//   openPopup(popupConfirm)
+//   buttonConfirm.addEventListener("click", () => {
+//     deleteCard(currentCard, popupConfirm);
+//   });
+// }
 
 // !!!!! Функция удаления карточки с сервера
 function removeCardFromServer(cardId) {
