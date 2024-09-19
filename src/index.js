@@ -101,8 +101,10 @@ function initialLikes(cardElement, cardData) {
 // Функция инициализации состояния кнопок лайков
 function initialLikesButtonState(cardElement, cardData, userResponse) {
   const likeButton = cardElement.querySelector(".card__like-button");
-  const userLiked = cardData.likes.some((users) => users.name === userResponse.name);
-  
+  const userLiked = cardData.likes.some(
+    (users) => users.name === userResponse.name
+  );
+
   if (userLiked) {
     likeButton.classList.add("card__like-button_is-active");
   }
@@ -112,7 +114,7 @@ function initialLikesButtonState(cardElement, cardData, userResponse) {
 function initialProfileInfo(userResponse) {
   profileName.textContent = userResponse.name;
   profileDescription.textContent = userResponse.about;
-  avatarProfile.style.backgroundImage = `url("${userResponse.avatar}")`
+  avatarProfile.style.backgroundImage = `url("${userResponse.avatar}")`;
 }
 
 // !!!to-do!!! Функции выше работают с АПИ, стоит изучить и перепестить в api.js
@@ -239,49 +241,86 @@ function confirmDelete(evt) {
   });
 }
 
-const popupEditAvatar = document.querySelector('.popup_type_edit-avatar')
+const popupEditAvatar = document.querySelector(".popup_type_edit-avatar");
 
 popupEditAvatar.addEventListener("submit", handleNewAvatarSubmit);
 
-const avatarProfile = document.querySelector('.profile__image')
-avatarProfile.addEventListener('click', (evt) => {
-  handleOpenPopup(popupEditAvatar)
-})
+const avatarProfile = document.querySelector(".profile__image");
+avatarProfile.addEventListener("click", (evt) => {
+  handleOpenPopup(popupEditAvatar);
+
+ 
+});
 
 // Функция обновления аватарки пользователя
 function handleNewAvatarSubmit(evt) {
   evt.preventDefault();
-  const linkAvatarInput = document.querySelector('[name="link-avatar"]')
-  const linkAvatar = linkAvatarInput.value
-  console.log(linkAvatarInput.value)
+  const linkAvatarInput = document.querySelector('[name="link-avatar"]');
+  const linkAvatar = linkAvatarInput.value;
 
-  addAvatarToServer(linkAvatar)
-    .then((result) => {
-      avatarProfile.style.backgroundImage = `url("${result.avatar}")`
-      console.log(linkAvatar)
-    })
-    .catch((error) => {
-      console.error("Ошибка при обновлении изображения профиля (аватарки):", error);
-    })
-    .finally(() => linkAvatarInput.value = '');
+  checkLinkIsImage(linkAvatar)
+  .then((isImage) => {
+    if (isImage) {
+      addAvatarToServer(linkAvatar)
+      .then((result) => {
+        avatarProfile.style.backgroundImage = `url("${result.avatar}")`;
+      })
+      .catch((error) => {
+        console.error(
+          "Ошибка при обновлении изображения профиля (аватарки):",
+          error
+        );
+      })
+      .finally(() => (linkAvatarInput.value = ""));
+    }
+  })
+  .catch((err) => {
+    console.error(err)
+  })
 }
 
 // !!!Функция добавления новой аватарки на сервер
 
 function addAvatarToServer(linkAvatar) {
-  return fetch("https://nomoreparties.co/v1/wff-cohort-23/users/me/avatar", {
-    method: "PATCH",
-    headers: {
-      authorization: "7bf212db-a84d-4fa1-abc8-ff61751045bf",
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      avatar: `${linkAvatar}`,
-    }),
-  }).then((res) => {
-    if (!res.ok) {
-      return Promise.reject(new Error(`Error: ${res.statusText}`));
+      return fetch(
+        "https://nomoreparties.co/v1/wff-cohort-23/users/me/avatar",
+        {
+          method: "PATCH",
+          headers: {
+            authorization: "7bf212db-a84d-4fa1-abc8-ff61751045bf",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            avatar: `${linkAvatar}`,
+          }),
+        }
+      ).then((res) => {
+        if (!res.ok) {
+          return Promise.reject(new Error(`Error: ${res.statusText}`));
+        }
+        return res.json();
+      });
     }
-    return res.json();
-  });
+ 
+
+// !!!Функция проверки валидности ссылки для обновления аватарки
+function checkLinkIsImage(linkAvatar) {
+  return fetch(`${linkAvatar}`, {
+    method: "HEAD",
+  }).then((res) => {
+    const contentType = res.headers.get("Content-Type");
+    if (
+      res.ok &&
+      (contentType === "image/jpeg" ||
+        contentType === "image/jpg" ||
+        contentType === "image/png" ||
+        contentType === "image/gif" ||
+        contentType === "image/svg+xml" ||
+        contentType === "image/webp")
+    ) {
+      return true;
+    } else {
+      return Promise.reject(new Error("Неправильная ссылка"));
+    }
+  })
 }
