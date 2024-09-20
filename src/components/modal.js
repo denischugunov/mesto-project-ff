@@ -16,8 +16,7 @@ function handlePopupCloseClick(evt) {
   const popupElement = evt.target.closest(".popup");
   if (
     evt.target.classList.contains("popup__close") ||
-    !evt.target.closest(".popup__content") ||
-    evt.target.classList.contains("popup__button")
+    !evt.target.closest(".popup__content")
   ) {
     closePopup(popupElement);
   }
@@ -39,5 +38,4 @@ function closePopup(popupElement) {
   document.removeEventListener("keydown", handleEscKeydown);
 }
 
-
-export { handleOpenPopup };
+export { handleOpenPopup, closePopup };

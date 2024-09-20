@@ -1,6 +1,14 @@
 import { createCard, deleteCard, toggleLikeButton } from "./components/card.js";
-import { handleOpenPopup } from "./components/modal.js";
+import { handleOpenPopup, closePopup } from "./components/modal.js";
 import { enableValidation, clearValidation } from "./components/validation.js";
+import {
+  fetchInitialCards,
+  fetchUserData,
+  updateUserData,
+  createCardData,
+  updateUserAvatar,
+} from "./components/api.js";
+
 import "./pages/index.css";
 
 // глобальные переменные основной страницы
@@ -9,6 +17,7 @@ const profileDescription = document.querySelector(".profile__description");
 const placesList = document.querySelector(".places__list");
 const editBtn = document.querySelector(".profile__edit-button");
 const addBtn = document.querySelector(".profile__add-button");
+const avatarProfile = document.querySelector(".profile__image");
 
 // глобальные переменные модальных окон
 const popupEdit = document.querySelector(".popup_type_edit");
@@ -22,14 +31,11 @@ const profileDescriptionInput = editProfileForm.querySelector(
 const newPlaceForm = document.querySelector('form[name="new-place"]');
 const placeNameInput = newPlaceForm.querySelector('[name="place-name"]');
 const placeLinkInput = newPlaceForm.querySelector('[name="link"]');
-
 const popupEditAvatar = document.querySelector(".popup_type_edit-avatar");
 const newAvatarForm = document.querySelector('form[name="new-avatar"]');
 const linkAvatarInput = document.querySelector('[name="link-avatar"]');
-// linkAvatarInput.addEventListener("input", checkLinkIsImage);
-// popupEditAvatar.addEventListener("submit", handleNewAvatarSubmit);
-
-const avatarProfile = document.querySelector(".profile__image");
+const popupConfirm = document.querySelector(".popup_type_delete-card");
+const buttonConfirm = popupConfirm.querySelector(".popup__button_type-delete");
 
 // глобальная константа с конфигом для валидации форм
 const validationConfig = {
@@ -45,36 +51,22 @@ const validationConfig = {
 popupEdit.classList.add("popup_is-animated");
 popupAdd.classList.add("popup_is-animated");
 popupCard.classList.add("popup_is-animated");
+popupConfirm.classList.add("popup_is-animated");
+popupEditAvatar.classList.add("popup_is-animated");
 
-// Функции инициализации карточек и данных пользователя с запросом с сервера (асинхр)
-const cardsResponse = fetch("https://nomoreparties.co/v1/wff-cohort-23/cards", {
-  headers: {
-    authorization: "7bf212db-a84d-4fa1-abc8-ff61751045bf",
-  },
-}).then((res) => {
-  if (!res.ok) return Promise.reject(new Error("Ошибка загрузки карточек"));
-  return res.json();
-});
+// ******** -----Функции для правильной инициализации страницы----- ********
 
-const userResponse = fetch(
-  "https://nomoreparties.co/v1/wff-cohort-23/users/me",
-  {
-    headers: {
-      authorization: "7bf212db-a84d-4fa1-abc8-ff61751045bf",
-    },
-  }
-).then((res) => {
-  if (!res.ok)
-    return Promise.reject(new Error("Ошибка загрузки данных пользователя"));
-  return res.json();
-});
+// Функция инициализации данных при загрузке страницы
+const initializeData = async () => {
+  try {
+    const [cardsResponse, userResponse] = await Promise.all([
+      fetchInitialCards(),
+      fetchUserData(),
+    ]);
 
-Promise.all([cardsResponse, userResponse])
-  .then(([cardsResponse, userResponse]) => {
     initialProfileInfo(userResponse);
 
-    const initialCards = cardsResponse;
-    initialCards.forEach((cardData) => {
+    cardsResponse.forEach((cardData) => {
       const cardElement = createCard(
         cardData,
         confirmDelete,
@@ -87,12 +79,16 @@ Promise.all([cardsResponse, userResponse])
       initialLikes(cardElement, cardData);
       initialLikesButtonState(cardElement, cardData, userResponse);
     });
-  })
-  .catch((error) => {
+  } catch (error) {
     console.error(error);
-  });
+  }
+};
 
-// Функция управления видимостью кнопки удаления карточки в зависимости от владельца карточки
+// Вызов функции инициализации данных при загрузке страницы
+initializeData();
+
+// Функция для управления видимостью кнопки удаления карточки в зависимости от того,
+// является ли текущий пользователь владельцем карточки при инициализации
 function checkCardOwner(cardData, userResponse, cardElement) {
   if (cardData.owner._id !== userResponse._id) {
     const buttonDelete = cardElement.querySelector(".card__delete-button");
@@ -125,54 +121,10 @@ function initialProfileInfo(userResponse) {
   avatarProfile.style.backgroundImage = `url("${userResponse.avatar}")`;
 }
 
-// !!!to-do!!! Функции выше работают с АПИ, стоит изучить и перепестить в api.js
+// Вызов функции инициализации валидации форм
+enableValidation(validationConfig);
 
-// функция изменения данных пользователя
-function handleEditProfileSubmit(evt) {
-  evt.preventDefault();
-
-  profileName.textContent = profileNameInput.value;
-  profileDescription.textContent = profileDescriptionInput.value;
-
-  fetch("https://nomoreparties.co/v1/wff-cohort-23/users/me", {
-    method: "PATCH",
-    headers: {
-      authorization: "7bf212db-a84d-4fa1-abc8-ff61751045bf",
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      name: `${profileNameInput.value}`,
-      about: `${profileDescriptionInput.value}`,
-    }),
-  });
-}
-
-// Функция добавления новой карточки с местом
-function handleNewPlaceSubmit(evt) {
-  evt.preventDefault();
-
-  addCardToServer(placeNameInput.value, placeLinkInput.value)
-    .then((result) => {
-      const cardData = {
-        name: result.name,
-        link: result.link,
-        _id: result._id,
-      };
-
-      const cardElement = createCard(
-        cardData,
-        confirmDelete,
-        toggleLikeButton,
-        openImagePopup
-      );
-      // cardElement.setAttribute('id', `${result._id}`)
-      placesList.prepend(cardElement);
-    })
-    .catch((error) => {
-      console.error("Ошибка при добавлении карточки:", error);
-    })
-    .finally(() => newPlaceForm.reset());
-}
+// ******** ------------------------------------------------------- ********
 
 // функция открытия изображения в большом окне
 function openImagePopup(evt) {
@@ -186,7 +138,7 @@ function openImagePopup(evt) {
   popupCaption.textContent = evt.target.alt;
 }
 
-// Обработчики кликов для открытия модальных окон
+// Функция обработчика кликов для открытия модальных окон
 document.addEventListener("click", (evt) => {
   if (evt.target === editBtn) {
     profileNameInput.value = profileName.textContent;
@@ -198,103 +150,163 @@ document.addEventListener("click", (evt) => {
     handleOpenPopup(popupAdd);
     clearValidation(newPlaceForm, validationConfig);
   } else if (evt.target === avatarProfile) {
-    console.log('help')
     newAvatarForm.reset();
-    handleOpenPopup(popupEditAvatar)
+    handleOpenPopup(popupEditAvatar);
     clearValidation(newAvatarForm, validationConfig);
   }
 });
 
-// обработчики событий для сабмитов форм
-popupEdit.addEventListener("submit", handleEditProfileSubmit);
-popupAdd.addEventListener("submit", handleNewPlaceSubmit);
-
-// Инициализация валидации форм
-enableValidation({
-  formSelector: ".popup__form",
-  inputSelector: ".popup__input",
-  submitButtonSelector: ".popup__button",
-  inactiveButtonClass: "popup__button_disabled",
-  inputErrorClass: "popup__input_type_error",
-  errorClass: "popup__error_visible",
-});
-
-// !!!Функция добавления новой карточки на сервер
-
-function addCardToServer(nameCard, linkCard) {
-  return fetch("https://nomoreparties.co/v1/wff-cohort-23/cards", {
-    method: "POST",
-    headers: {
-      authorization: "7bf212db-a84d-4fa1-abc8-ff61751045bf",
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      name: `${nameCard}`,
-      link: `${linkCard}`,
-    }),
-  }).then((res) => {
-    if (!res.ok) {
-      return Promise.reject(new Error(`Error: ${res.statusText}`));
-    }
-    return res.json();
-  });
-}
-
-// !!!Функция подтверждения удаления карточки
-function confirmDelete(evt) {
-  const popupConfirm = document.querySelector(".popup_type_delete-card");
-  const buttonConfirm = popupConfirm.querySelector(
-    ".popup__button_type-delete"
-  );
-  const currentCard = evt.target.closest(".places__item");
-
-  handleOpenPopup(popupConfirm);
-  buttonConfirm.addEventListener("click", () => {
-    deleteCard(currentCard, popupConfirm);
-  });
-}
-
-
-
-avatarProfile.addEventListener("click", (evt) => {
+// Функция обработчика клика по аватарке
+avatarProfile.addEventListener("click", () => {
   handleOpenPopup(popupEditAvatar);
 });
 
-// Функция обновления аватарки пользователя
-function handleNewAvatarSubmit(evt) {
-  evt.preventDefault();
-  const linkAvatar = linkAvatarInput.value;
+// Функции обработчиков событий для сабмитов форм
+popupEdit.addEventListener("submit", handleEditProfileSubmit);
+popupAdd.addEventListener("submit", handleNewPlaceSubmit);
+popupEditAvatar.addEventListener("submit", handleNewAvatarSubmit);
 
-  addAvatarToServer(linkAvatar)
-    .then((result) => {
-      avatarProfile.style.backgroundImage = `url("${result.avatar}")`;
-    })
-    .catch((error) => {
-      console.error(
-        "Ошибка при обновлении изображения профиля (аватарки):",
-        error
-      );
-    })
-    .finally(() => (linkAvatarInput.value = ""));
+// ******** ------ функции, требующие обработки данных на сервере ------ ********
+
+// Функция обработки отправки формы: показывает индикатор загрузки,
+// вызывает callback для работы с сервером и обрабатывает ошибки.
+async function handleSubmit(evt, callback) {
+  evt.preventDefault();
+  const activeButton = evt.target.querySelector(".popup__button");
+  const oldText = activeButton.textContent;
+  renderLoading(true, activeButton, oldText);
+
+  try {
+    await callback();
+  } catch (error) {
+    console.error("Ошибка:", error.message);
+  } finally {
+    renderLoading(false, activeButton, oldText);
+  }
 }
 
-// !!!Функция добавления новой аватарки на сервер
+// Функция рендеринга загрузки
+function renderLoading(isLoading, button, oldText) {
+  button.textContent = isLoading ? "Сохранение..." : oldText;
+}
 
-function addAvatarToServer(linkAvatar) {
-  return fetch("https://nomoreparties.co/v1/wff-cohort-23/users/me/avatar", {
-    method: "PATCH",
-    headers: {
-      authorization: "7bf212db-a84d-4fa1-abc8-ff61751045bf",
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      avatar: `${linkAvatar}`,
-    }),
-  }).then((res) => {
-    if (!res.ok) {
-      return Promise.reject(new Error(`Error: ${res.statusText}`));
-    }
-    return res.json();
+// Функция добавления новой карточки с местом на странице
+async function handleNewPlaceSubmit(evt) {
+  await handleSubmit(evt, async () => {
+    const data = await addCardToServer(
+      placeNameInput.value,
+      placeLinkInput.value
+    );
+
+    const cardData = {
+      name: data.name,
+      link: data.link,
+      _id: data._id,
+    };
+
+    const cardElement = createCard(
+      cardData,
+      confirmDelete,
+      toggleLikeButton,
+      openImagePopup
+    );
+
+    placesList.prepend(cardElement);
+    newPlaceForm.reset();
+    closePopup(popupAdd);
   });
 }
 
+// Функция добавления новой карточки на сервер
+async function addCardToServer(nameCard, linkCard) {
+  const cardData = {
+    name: nameCard,
+    link: linkCard,
+  };
+  try {
+    const data = await createCardData(cardData);
+    return data;
+  } catch (error) {
+    console.error("Ошибка добавления карточки:", error.message);
+  }
+}
+
+// Функция обновления аватарки пользователя на странице
+async function handleNewAvatarSubmit(evt) {
+  await handleSubmit(evt, async () => {
+    const linkAvatar = linkAvatarInput.value;
+    const result = await addAvatarToServer(linkAvatar);
+    avatarProfile.style.backgroundImage = `url("${result.avatar}")`;
+    closePopup(popupEditAvatar);
+    linkAvatarInput.value = "";
+  });
+}
+
+// Функция добавления новой аватарки на сервер
+async function addAvatarToServer(linkAvatar) {
+  const avatarData = {
+    avatar: linkAvatar,
+  };
+  try {
+    const data = await updateUserAvatar(avatarData);
+    return data;
+  } catch (error) {
+    console.error("Ошибка обновления аватара:", error.message);
+  }
+}
+
+// Функция обновления информации профиля (рендер)
+function updateProfileInfo(data) {
+  profileName.textContent = data.name;
+  profileDescription.textContent = data.about;
+}
+
+// функция изменения данных пользователя на странице
+async function handleEditProfileSubmit(evt) {
+  await handleSubmit(evt, async () => {
+    const userData = getUserDataFromInputs();
+    const data = await updateUserData(userData);
+    updateProfileInfo(data);
+    closePopup(popupEdit);
+  });
+}
+
+// Функция для извлечения данных о пользователе из полей ввода
+function getUserDataFromInputs() {
+  return {
+    name: profileNameInput.value,
+    about: profileDescriptionInput.value,
+  };
+}
+
+// Глобальная переменная с активной карточкой, которую нужно удалить
+let currentCard;
+
+// Функция открытия попапа для подтверждения удаления карточки (выносит в глобальную переменную активную карточку)
+function confirmDelete(evt) {
+  currentCard = evt.target.closest(".places__item");
+
+  handleOpenPopup(popupConfirm);
+
+  buttonConfirm.removeEventListener("click", handleClick);
+  buttonConfirm.addEventListener("click", handleClick);
+}
+
+// Функция удаления карточки по клику на кнопку подтверждения удаления
+const handleClick = async (e) => {
+  const activeButton = e.target;
+  const oldText = activeButton.textContent;
+  renderLoading(true, activeButton, oldText);
+
+  try {
+    await deleteCard(currentCard);
+    closePopup(popupConfirm);
+  } catch (error) {
+    console.error("Ошибка при удалении карточки:", error);
+  } finally {
+    renderLoading(false, activeButton, oldText);
+    closePopup(popupConfirm);
+  }
+};
+
+// ******** ------------------------------------------------------- ********

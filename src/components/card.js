@@ -1,3 +1,9 @@
+import {
+  sendDeleteCardRequest,
+  sendLikeDeletionData,
+  sendLikePutData,
+} from "./api.js";
+
 // Функция создания карточки
 const createCard = (
   cardData,
@@ -24,88 +30,47 @@ const createCard = (
   return cardElement;
 };
 
-// !!!Функция удаления карточки
-function deleteCard(currentCard, popupConfirm) {
-  console.log(currentCard.id);
-
-  removeCardFromServer(currentCard.id)
-    .then(() => {
-      currentCard.remove();
-      popupConfirm.style.display = "none";
-    })
-    .catch((err) => console.error("Ошибка при удалении карточки:", err));
-}
-
-// // !!!Функция подтверждения удаления карточки
-// function confirmDelete(evt) {
-//   const popupConfirm = document.querySelector(".popup_type_delete-card");
-//   const buttonConfirm = popupConfirm.querySelector(
-//     ".popup__button_type-delete"
-//   );
-//   const currentCard = evt.target.closest(".places__item");
-
-//   // popupConfirm.style.display = "flex";
-//   openPopup(popupConfirm)
-//   buttonConfirm.addEventListener("click", () => {
-//     deleteCard(currentCard, popupConfirm);
-//   });
-// }
-
-// !!!!! Функция удаления карточки с сервера
-function removeCardFromServer(cardId) {
-  return fetch(`https://nomoreparties.co/v1/wff-cohort-23/cards/${cardId}`, {
-    method: "DELETE",
-    headers: {
-      authorization: "7bf212db-a84d-4fa1-abc8-ff61751045bf",
-      "Content-Type": "application/json",
-    },
-  }).then((res) => {
-    if (!res.ok)
-      return Promise.reject(
-        new Error(`Не удалось удалить карточку: ${res.statusText}`)
-      );
-  });
-}
-
-// Функция лайка (рендер + вызов функции отправки на сервер)
-function toggleLikeButton(evt) {
-  const currentLikeButton = evt.target;
-  sendLikeStatus(currentLikeButton);
-  currentLikeButton.classList.toggle("card__like-button_is-active");
-}
-
-// !!!Функция отправки данных о лайке на сервер
-function sendLikeStatus(currentLikeButton) {
-  const currentCard = currentLikeButton.closest(".card");
-  if (currentLikeButton.classList.contains("card__like-button_is-active")) {
-    fetch(
-      `https://nomoreparties.co/v1/wff-cohort-23/cards/likes/${currentCard.id}`,
-      {
-        method: "DELETE",
-        headers: {
-          authorization: "7bf212db-a84d-4fa1-abc8-ff61751045bf",
-          "Content-Type": "application/json",
-        },
-      }
-    )
-      .then((res) => res.json())
-      .then((cardData) => renderLikeCounter(cardData, currentCard));
-  } else {
-    fetch(
-      `https://nomoreparties.co/v1/wff-cohort-23/cards/likes/${currentCard.id}`,
-      {
-        method: "PUT",
-        headers: {
-          authorization: "7bf212db-a84d-4fa1-abc8-ff61751045bf",
-          "Content-Type": "application/json",
-        },
-      }
-    )
-      .then((res) => res.json())
-      .then((cardData) => renderLikeCounter(cardData, currentCard));
+// Функция удаления карточки
+async function deleteCard(currentCard) {
+  try {
+    await sendDeleteCardRequest(currentCard.id);
+    currentCard.remove();
+    return true;
+  } catch (err) {
+    console.error("Ошибка при удалении карточки:", err);
+    throw new Error("Ошибка при удалении карточки: " + err.message);
   }
 }
 
+// Функция лайка (рендер иконки лайка + вызов функции отправки на сервер)
+async function toggleLikeButton(evt) {
+  const currentLikeButton = evt.target;
+  const checkSuccess = await sendLikeStatus(currentLikeButton);
+  if (checkSuccess) {
+    currentLikeButton.classList.toggle("card__like-button_is-active");
+  }
+}
+
+// Функция отправки данных о лайке на сервер
+async function sendLikeStatus(currentLikeButton) {
+  const currentCard = currentLikeButton.closest(".card");
+  try {
+    if (currentLikeButton.classList.contains("card__like-button_is-active")) {
+      const cardData = await sendLikeDeletionData(currentCard.id);
+      renderLikeCounter(cardData, currentCard);
+      return true;
+    } else {
+      const cardData = await sendLikePutData(currentCard.id);
+      renderLikeCounter(cardData, currentCard);
+      return true;
+    }
+  } catch (error) {
+    return false;
+    console.error("Ошибка при обновлении статуса лайка:", error);
+  }
+}
+
+// Функция рендера счетчика лайков
 function renderLikeCounter(cardData, currentCard) {
   const likeCount = cardData.likes.length;
   const counterLikes = currentCard.querySelector(".card__like-counter");
