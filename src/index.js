@@ -47,6 +47,9 @@ const validationConfig = {
   errorClass: "popup__error_visible",
 };
 
+// глобальная константа с id пользователя
+let userId;
+
 // Выражения, чтобы самая первая анимация открытия модальных окон по клику была плавной
 popupEdit.classList.add("popup_is-animated");
 popupAdd.classList.add("popup_is-animated");
@@ -66,18 +69,18 @@ const initializeData = async () => {
 
     initialProfileInfo(userResponse);
 
+    userId = userResponse._id;
+
     cardsResponse.forEach((cardData) => {
       const cardElement = createCard(
         cardData,
         confirmDelete,
         toggleLikeButton,
-        openImagePopup
+        openImagePopup,
+        userId
       );
 
-      checkCardOwner(cardData, userResponse, cardElement);
       placesList.append(cardElement);
-      initialLikes(cardElement, cardData);
-      initialLikesButtonState(cardElement, cardData, userResponse);
     });
   } catch (error) {
     console.error(error);
@@ -86,33 +89,6 @@ const initializeData = async () => {
 
 // Вызов функции инициализации данных при загрузке страницы
 initializeData();
-
-// Функция для управления видимостью кнопки удаления карточки в зависимости от того,
-// является ли текущий пользователь владельцем карточки при инициализации
-function checkCardOwner(cardData, userResponse, cardElement) {
-  if (cardData.owner._id !== userResponse._id) {
-    const buttonDelete = cardElement.querySelector(".card__delete-button");
-    buttonDelete.remove();
-  }
-}
-
-// Функция инициализации счетчиков лайков
-function initialLikes(cardElement, cardData) {
-  const counterLikes = cardElement.querySelector(".card__like-counter");
-  counterLikes.textContent = cardData.likes.length;
-}
-
-// Функция инициализации состояния кнопок лайков
-function initialLikesButtonState(cardElement, cardData, userResponse) {
-  const likeButton = cardElement.querySelector(".card__like-button");
-  const userLiked = cardData.likes.some(
-    (users) => users.name === userResponse.name
-  );
-
-  if (userLiked) {
-    likeButton.classList.add("card__like-button_is-active");
-  }
-}
 
 // Функция инициализации данных пользователя
 function initialProfileInfo(userResponse) {
@@ -193,22 +169,17 @@ function renderLoading(isLoading, button, oldText) {
 // Функция добавления новой карточки с местом на странице
 async function handleNewPlaceSubmit(evt) {
   await handleSubmit(evt, async () => {
-    const data = await addCardToServer(
+    const cardData = await addCardToServer(
       placeNameInput.value,
       placeLinkInput.value
     );
-
-    const cardData = {
-      name: data.name,
-      link: data.link,
-      _id: data._id,
-    };
 
     const cardElement = createCard(
       cardData,
       confirmDelete,
       toggleLikeButton,
-      openImagePopup
+      openImagePopup,
+      userId
     );
 
     placesList.prepend(cardElement);
